@@ -25,8 +25,12 @@ typedef struct{
     int life;
 }Character;//人物的速度，轨道和当前动作,高度,生命数
 #define UP_OB 0;
-
+#define DOWN_OB 1;
+#define ALL_OB 2;
+#define DEATH_OB 3;
 typedef struct{
+    int exist;
+    int distance;
     int line;
     int x;
 }Obstacle;
@@ -36,18 +40,44 @@ typedef struct{
     int x;
 }Object;
 void start();
-const int obstacle_dis;
+void create(int line,int distance,Obstacle *obs);
+void CreateSurvive(int line,int distance,Obstacle *obs);
+const int obstacle_dis=4;
 int main(){
     start();
     return 0;
 }
 void start(){
     Character m={100,2,RUN,1,1};
+    Obstacle obstacle[20]={0};//3的倍数位为幸存路
     srand(time(0));
+    int x;int survive;//随机数
     for(int i=1;i<=6;i++){
-        int x=rand();
-        x=(x%3)+1;
-        printf("%d\n",x);
+        x=rand();survive=x%3+1;
+        CreateSurvive(survive,i*obstacle_dis,&obstacle[i*3]);
+        for(int j=1;j<=3;j++){
+            if(i==survive)continue;
+            else create(j,i*obstacle_dis,&obstacle[i*3-3+j]);
+        }
     }
-
+}
+void create(int line,int distance,Obstacle *obs){
+    int x=rand();x=x%5;
+    if(x==4)return;
+    else{
+        obs->exist=1;
+        obs->x=x;
+        obs->distance=distance;
+        obs->line=line;
+    }
+}
+void CreateSurvive(int line,int distance,Obstacle *obs){
+    int x=rand();x=x%4;
+    if(x==3)return;
+    else{
+        obs->exist=1;
+        obs->x=x;
+        obs->distance=distance;
+        obs->line=line;
+    }
 }
