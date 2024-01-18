@@ -17,20 +17,37 @@
  * 按照位置生成东西
  * 每隔一段时间刷新一次
  */
-#define RUN 0
-#define T_LEFT 1
-#define T_RIGHT 2
-#define UP 3
-#define DOWN 4
-struct character{
+typedef struct{
     int v;
     int line;
     int action;
     int height;
     int life;
 }Character;//人物的速度，轨道和当前动作,高度,生命数
+#define UP_OB 0;
+
+typedef struct{
+    int line;
+    int x;
+}Obstacle;
+typedef struct{
+    int line;
+    int height;
+    int x;
+}Object;
+void start();
+const int obstacle_dis;
 int main(){
-
-
+    start();
     return 0;
+}
+void start(){
+    Character m={100,2,RUN,1,1};
+    srand(time(0));
+    for(int i=1;i<=6;i++){
+        int x=rand();
+        x=(x%3)+1;
+        printf("%d\n",x);
+    }
+
 }
