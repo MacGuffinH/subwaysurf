@@ -1,0 +1,3 @@
+D:/aboutC/SubwaySurfer/cmake-build-debug/CMakeFiles/mg_subway.dir
+D:/aboutC/SubwaySurfer/cmake-build-debug/CMakeFiles/edit_cache.dir
+D:/aboutC/SubwaySurfer/cmake-build-debug/CMakeFiles/rebuild_cache.dir
