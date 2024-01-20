@@ -2,82 +2,165 @@
 // Created by zuy12 on 2024/1/18.
 //
 #include "mg_subway.h"
-/*
- * 项目分析
- * 包含对象：人物，障碍，金币，玩家
- * 游戏操作：跳，下滚，变轨，开始，暂停
- * 实现逻辑：
- * 储存得分和金币数
- * 所有物体都有距离人物距离，轨道和高度
- * 物体和人物同一轨道，同一高度，距离相差不大时会相撞
- * 障碍与主角相撞，主角生命减一
- * 金币与主角相撞，主角金币数加一，金币消失
- * 道具和主角相撞，主角获得道具，道具消失
- * 按特殊键开始，初始化人物，随机出可通过轨道，唯一可通过轨道上有金币
- * 按照位置生成东西
- * 每隔一段时间刷新一次
- */
-typedef struct{
+
+typedef struct {
     int v;
     int line;
     int action;
     int height;
     int life;
-}Character;//人物的速度，轨道和当前动作,高度,生命数
-#define UP_OB 0;
-#define DOWN_OB 1;
-#define ALL_OB 2;
-#define DEATH_OB 3;
-typedef struct{
+} Character;//人物的速度，轨道和当前动作,高度,生命数
+typedef struct {
     int exist;
     int distance;
     int line;
     int x;
-}Obstacle;
-typedef struct{
+} Obstacle;
+typedef struct {
+    int distance;
     int line;
     int height;
+    int exist;
     int x;
-}Object;
-void start();
-void create(int line,int distance,Obstacle *obs);
-void CreateSurvive(int line,int distance,Obstacle *obs);
-const int obstacle_dis=4;
-int main(){
-    start();
+} Object;
+
+
+void create(int line, int distance, Obstacle *obs);
+
+void CreateSurvive(int line, int distance, Obstacle *obs, Object object[]);
+
+void refresh(int t, Obstacle obs[], Object ob[], Character *ch);
+
+void stop();
+
+const int obstacle_dis = 4;
+const int hit_obs = 1;
+const int hit_ob = 0;
+const int vplus = 10;
+const int again = 5;
+int money, s, score;
+int get_m, get_s, get_sc;//刷新前得到的金币，距离和分数
+void change(char action, Character *m);
+
+int main() {
+    SDL_Event event;
+    SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
+    SDL_PollEvent(&event);
+    char action;
+    int n = 1;
+    while (1) {
+        money = s = score = 0;//3的倍数位为幸存路
+        Character m = {1, 2, RUN, 1, 1};
+        Obstacle obstacle[4] = {0};
+        Object object[4] = {0};
+        srand(time(0));
+        int x;
+        int survive;//随机数
+        x = rand();
+        survive = x % 3 + 1;
+        CreateSurvive(survive, obstacle_dis, &obstacle[3], object);
+        for (int j = 1; j <= 3; j++) {
+            if (j == survive)continue;
+            else create(j, obstacle_dis, &obstacle[j - 1]);
+        }
+        for (int i = 1; i <= 3; i++) {
+            printf("%d ", obstacle[i - 1].exist == 1 ? obstacle[i - 1].x : obstacle[3].x);
+        }
+        printf("\n");
+        while (1) {
+            refresh(1, obstacle, object, &m);
+            s += m.v * 1;
+            if (s >= again) {
+                x = rand();
+                survive = x % 3 + 1;
+                CreateSurvive(survive, obstacle_dis, &obstacle[3], object);
+                for (int j = 1; j <= 3; j++) {
+                    if (j == survive)continue;
+                    else create(j, obstacle_dis, &obstacle[j - 1]);
+                }
+                for (int i = 1; i <= 3; i++) {
+                    printf("%d ", obstacle[i - 1].exist == 1 ? obstacle[i - 1].x : obstacle[3].x);
+                }
+                printf("s:%d l:%d h:%d m:%d\n", survive, m.line, m.height, money);
+                scanf("%c", &action);
+                getchar();
+                change(action, &m);
+            }
+        }
+    }
     return 0;
 }
-void start(){
-    Character m={100,2,RUN,1,1};
-    Obstacle obstacle[20]={0};//3的倍数位为幸存路
-    srand(time(0));
-    int x;int survive;//随机数
-    for(int i=1;i<=6;i++){
-        x=rand();survive=x%3+1;
-        CreateSurvive(survive,i*obstacle_dis,&obstacle[i*3]);
-        for(int j=1;j<=3;j++){
-            if(i==survive)continue;
-            else create(j,i*obstacle_dis,&obstacle[i*3-3+j]);
+
+void refresh(int t, Obstacle obs[4], Object ob[4], Character *ch) {
+    for (int i = 1; i <= 3; i++) {
+        obs[i].distance -= t * (ch->v);
+        ob[i].distance -= t * (ch->v);
+        if (obs[i].exist && obs[i].line == ch->line && obs[i].distance >= -hit_obs && obs[i].distance <= hit_obs) {
+            {
+                obs[i].exist = 0;
+                printf("cool\n");
+            }
+            if ((obs[i].x == UP_OB && (ch->height == 1 || ch->height == 0)) ||
+                (obs[i].x == DOWN_OB && (ch->height == 1 || ch->height == 2)) ||
+                (obs[i].x == ALL_OB && ch->height == 1) ||
+                (obs[i].x == DEATH_OB && (ch->height == 1 || ch->height == 0 || ch->height == 2))) {
+                ch->life--;
+                printf("Game over!\n");
+            }
+            //if(ch->life==0)stop();
+        }
+        if (ob[i].exist && ob[i].line == ch->line && ob[i].distance >= -hit_ob && ob[i].distance <= hit_ob &&
+            ob[i].height == ch->height) {
+            if (ob[i].x == COIN)get_m++;
+            ob[i].exist = 0;
+        }
+    }
+    score += ch->v * t + get_m;
+    ch->v += score / vplus;
+    money += get_m;
+    get_m = 0;
+}
+
+void create(int line, int distance, Obstacle *obs) {
+    int x = rand();
+    x = x % 5;
+    if (x == 4)return;
+    else {
+        obs->exist = 1;
+        obs->x = x;
+        obs->distance = distance;
+        obs->line = line;
+    }
+}
+
+void CreateSurvive(int line, int distance, Obstacle *obs, Object object[]) {
+    int x = rand();
+    x = x % 4;
+    object[3].exist = 1;
+    object[3].x = COIN;
+    object[3].line = line;
+    object[3].distance = distance;
+    if (x == 3) {
+        object[3].height = 1;
+        return;
+    } else {
+        obs->exist = 1;
+        obs->x = x;
+        obs->distance = distance;
+        obs->line = line;
+        if (x == UP_OB) {
+            object[3].height = 2;
+        } else if (x == DOWN_OB) {
+            object[3].height = 0;
+        } else {
+            object[3].height = 2;
         }
     }
 }
-void create(int line,int distance,Obstacle *obs){
-    int x=rand();x=x%5;
-    if(x==4)return;
-    else{
-        obs->exist=1;
-        obs->x=x;
-        obs->distance=distance;
-        obs->line=line;
-    }
-}
-void CreateSurvive(int line,int distance,Obstacle *obs){
-    int x=rand();x=x%4;
-    if(x==3)return;
-    else{
-        obs->exist=1;
-        obs->x=x;
-        obs->distance=distance;
-        obs->line=line;
-    }
+
+void change(char action, Character *m) {
+    if (action == 'A' && m->line != 1)m->line--;
+    else if (action == 'D' && m->line != 3)m->line++;
+    else if (action == 'W')m->height++;
+    else if (action == 'S')m->height--;
 }
