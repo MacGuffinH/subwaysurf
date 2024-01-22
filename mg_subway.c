@@ -1,11 +1,6 @@
-//
-// Created by zuy12 on 2024/1/18.
-//
 #include "mg_subway.h"
-
 typedef struct {
-    int v;
-    int line;
+    int v,line;
     int action;
     int height;
     int life;
@@ -23,17 +18,11 @@ typedef struct {
     int exist;
     int x;
 } Object;
-
-
 void create(int line, int distance, Obstacle *obs);
-
 void CreateSurvive(int line, int distance, Obstacle *obs, Object object[]);
-
 void refresh(int t, Obstacle obs[], Object ob[], Character *ch);
-
 void stop();
-
-const int obstacle_dis = 4;
+const int obstacle_dis = 5;
 const int hit_obs = 1;
 const int hit_ob = 0;
 const int vplus = 10;
@@ -41,14 +30,27 @@ const int again = 5;
 int money, s, score;
 int get_m, get_s, get_sc;//刷新前得到的金币，距离和分数
 void change(char action, Character *m);
-
+SDL_Window *Window;
+SDL_Renderer *Renderer;
 int main() {
-    SDL_Event event;
+    SDL_Init(SDL_INIT_EVERYTHING);
     SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
-    SDL_PollEvent(&event);
+    SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
+    SDL_EventState(SDL_MOUSEBUTTONUP, SDL_IGNORE);
+    SDL_EventState(SDL_KEYUP, SDL_IGNORE);
+    Window = SDL_CreateWindow("HonokaGo!", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 725, 800, SDL_WINDOW_SHOWN);
+    SDL_Surface *surface= SDL_GetWindowSurface(Window);
+    SDL_Surface *background= SDL_LoadBMP("1.bmp");
+    SDL_BlitSurface(background,NULL,surface,NULL);
+    SDL_UpdateWindowSurface(Window);
     char action;
-    int n = 1;
-    while (1) {
+    SDL_Event event;
+    while (1){
+        if(SDL_PollEvent(&event)){
+            if(event.type==SDL_QUIT||event.type==SDL_KEYDOWN)break;
+        }
+    }
+    if (event.key.keysym.sym==SDLK_p) {
         money = s = score = 0;//3的倍数位为幸存路
         Character m = {1, 2, RUN, 1, 1};
         Obstacle obstacle[4] = {0};
@@ -66,7 +68,10 @@ int main() {
         for (int i = 1; i <= 3; i++) {
             printf("%d ", obstacle[i - 1].exist == 1 ? obstacle[i - 1].x : obstacle[3].x);
         }
-        printf("\n");
+        printf("s:%d l:%d h:%d m:%d %d\n", survive, m.line, m.height, money,again-s);
+        scanf("%c", &action);
+        getchar();
+        change(action, &m);
         while (1) {
             refresh(1, obstacle, object, &m);
             s += m.v * 1;
@@ -78,16 +83,18 @@ int main() {
                     if (j == survive)continue;
                     else create(j, obstacle_dis, &obstacle[j - 1]);
                 }
-                for (int i = 1; i <= 3; i++) {
-                    printf("%d ", obstacle[i - 1].exist == 1 ? obstacle[i - 1].x : obstacle[3].x);
-                }
-                printf("s:%d l:%d h:%d m:%d\n", survive, m.line, m.height, money);
-                scanf("%c", &action);
-                getchar();
-                change(action, &m);
             }
+            for (int i = 1; i <= 3; i++) {
+                printf("%d ", obstacle[i - 1].exist == 1 ? obstacle[i - 1].x : obstacle[3].x);
+            }
+            printf("s:%d l:%d h:%d m:%d %d\n", survive, m.line, m.height, money,again-s);
+            scanf("%c", &action);
+            getchar();
+            change(action, &m);
         }
     }
+    SDL_DestroyWindow(Window);
+    SDL_Quit();
     return 0;
 }
 
@@ -120,7 +127,6 @@ void refresh(int t, Obstacle obs[4], Object ob[4], Character *ch) {
     money += get_m;
     get_m = 0;
 }
-
 void create(int line, int distance, Obstacle *obs) {
     int x = rand();
     x = x % 5;
@@ -132,7 +138,6 @@ void create(int line, int distance, Obstacle *obs) {
         obs->line = line;
     }
 }
-
 void CreateSurvive(int line, int distance, Obstacle *obs, Object object[]) {
     int x = rand();
     x = x % 4;
@@ -157,7 +162,6 @@ void CreateSurvive(int line, int distance, Obstacle *obs, Object object[]) {
         }
     }
 }
-
 void change(char action, Character *m) {
     if (action == 'A' && m->line != 1)m->line--;
     else if (action == 'D' && m->line != 3)m->line++;
