@@ -11,7 +11,30 @@
 #include "SDL2/SDL_image.h"
 #include "SDL2/SDL_ttf.h"
 
-
+typedef struct {
+    int v,line;
+    int action;
+    int height;
+    int life;
+} Character;//人物的速度，轨道和当前动作,高度,生命数
+typedef struct {
+    int exist;
+    int distance;
+    int line;
+    int x;
+} Obstacle;
+typedef struct {
+    int distance;
+    int line;
+    int height;
+    int exist;
+    int x;
+} Object;
+void create(int line, int distance, Obstacle *obs);
+void CreateSurvive(int line, int distance, Obstacle *obs, Object object[]);
+void refresh(int t, Obstacle obs[], Object ob[], Character *ch);
+void load();
+void stop();
 #define RUN 0
 #define T_LEFT 1
 #define T_RIGHT 2
