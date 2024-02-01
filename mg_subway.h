@@ -22,6 +22,9 @@
 #define DOWN_OB 1
 #define ALL_OB 2
 #define DEATH_OB 3
+#define UP_E_OB 4
+#define DOWN_E_OB 5
+#define ALL_E_OB 6
 
 #define COIN 0
 #define FLY 1

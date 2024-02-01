@@ -17,10 +17,10 @@ void Draw(Obstacle *obstacle);
 
 void LoadTexture(SDL_Surface *sur, SDL_Texture **texture);
 
-int ti ,ti_ob,  ti_fly,ti_magnet;
+int ti ,ti_ob,  ti_fly,ti_magnet,ti_e,c;
 SDL_Window *Window;
-SDL_Texture *cha_, *ch_jump_, *ch_down_, *coin_, *ob_up_, *ob_down_, *ob_all_, *ob_death_, *back, *tip_, *ch_sk_, *score__, *fly_,*magnet_ = NULL;
-SDL_Surface *tip, *background, *cha, *ch_jump, *ch_down, *coin, *ob_up, *ob_down, *ob_all, *ob_death, *ch_sk, *score_, *fly,*magnet = NULL;
+SDL_Texture *cha_, *ch_jump_, *ch_down_, *coin_, *ob_up_, *ob_down_, *ob_all_, *ob_death_, *back, *tip_, *ch_sk_, *score__, *fly_,*magnet_,*ob_e_up_,*ob_e_down_,*ob_e_all_ = NULL;
+SDL_Surface *tip, *background, *cha, *ch_jump, *ch_down, *coin, *ob_up, *ob_down, *ob_all, *ob_death, *ch_sk, *score_, *fly,*magnet,*ob_e_up,*ob_e_down,*ob_e_all = NULL;
 TTF_Font *f = NULL;
 SDL_Color color = {0};
 SDL_Rect reob, reo;
@@ -46,7 +46,7 @@ int main() {
         SDL_PollEvent(&event);
         if (event.type == SDL_QUIT)break;
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_p) {
-            ti = ti_ob = ti_fly =ti_magnet= n = 0;
+            ti = ti_ob = ti_fly =ti_magnet= n =ti_e= 0;
             SDL_RenderClear(Renderer);
             SDL_RenderCopy(Renderer, back, NULL, NULL);
             reob.w = reob.h = 100;
@@ -67,15 +67,18 @@ int main() {
                     create(j, obstacle_dis, &obstacle[j - 1]);
                 }
             }
+            c=0;
             SDL_RenderPresent(Renderer);
             for (int i = 1; i <= 3; i++)printf("%d ", obstacle[i - 1].exist == 1 ? obstacle[i - 1].x : obstacle[3].x);
             printf("s:%d l:%d h:%d m:%d %d\n", survive[0], m.line, m.height, money, again - s);
             n = 4;
             //printf("%d %d\n",reo.x,reo.y);
             while (ok && m.life) {
-                SDL_Delay(40);
-                refresh(1, obstacle, object, &m);
-                s += m.v * 1;
+                SDL_Delay(20);
+                if(c)refresh(1, obstacle, object, &m);
+                if(c)s += m.v * 1;
+                if(c)c=0;
+                else c=1;
                 if (s >= again) {
                     for (int i = 0 + n; i <= 3 + n; i++) {
                         obstacle[i].exist = 0;
@@ -102,6 +105,7 @@ int main() {
                 if (event.type == SDL_QUIT)shutdown();
                 SDL_RenderPresent(Renderer);
             }
+            printf("%d",m.life);
         }
     }
     shutdown();
@@ -138,6 +142,12 @@ void load() {
     LoadTexture(ob_death, &ob_death_);
     ch_sk = IMG_Load("Image/11.png");
     LoadTexture(ch_sk, &ch_sk_);
+    ob_e_up= IMG_Load("Image/14.png");
+    LoadTexture(ob_e_up,&ob_e_up_);
+    ob_e_down= IMG_Load("Image/15.png");
+    LoadTexture(ob_e_down,&ob_e_down_);
+    ob_e_all= IMG_Load("Image/16.png");
+    LoadTexture(ob_e_all,&ob_e_all_);
     f = TTF_OpenFont("Image/GenshinDefault.ttf", 16);
 }
 
@@ -191,10 +201,29 @@ void Draw(Obstacle *obstacle) {
     if (!(obstacle->exist))return;
     reob.x = obstacle->line * 105;
     reob.y = 650 - obstacle->distance;
-    if (obstacle->x == UP_OB)SDL_RenderCopy(Renderer, ob_up_, NULL, &reob);
-    else if (obstacle->x == DOWN_OB)SDL_RenderCopy(Renderer, ob_down_, &i_rect, &reob);
-    else if (obstacle->x == ALL_OB)SDL_RenderCopy(Renderer, ob_all_, &i_rect, &reob);
-    else if (obstacle->x == DEATH_OB)SDL_RenderCopy(Renderer, ob_death_, &i_rect, &reob);
+    switch (obstacle->x) {
+        case UP_OB:
+            SDL_RenderCopy(Renderer, ob_up_, NULL, &reob);
+            break;
+        case DOWN_OB:
+            SDL_RenderCopy(Renderer, ob_down_, NULL, &reob);
+            break;
+        case ALL_OB:
+            SDL_RenderCopy(Renderer, ob_all_, &i_rect, &reob);
+            break;
+        case DEATH_OB:
+            SDL_RenderCopy(Renderer, ob_death_, &i_rect, &reob);
+            break;
+        case UP_E_OB:
+            SDL_RenderCopy(Renderer,ob_e_up_,NULL,&reob);
+            break;
+        case DOWN_E_OB:
+            SDL_RenderCopy(Renderer,ob_e_down_,NULL,&reob);
+            break;
+        case ALL_E_OB:
+            SDL_RenderCopy(Renderer,ob_e_all_,NULL,&reob);
+            break;
+    }
 }
 
 void Draw2(Object *object) {
@@ -214,7 +243,7 @@ void Draw2(Object *object) {
 
 void CreateSurvive(int line, int distance, Obstacle *obs, Object object[]) {
     int x = rand();
-    x = x % 4;
+    x = x % 7;
     int b = 3 + n;
     object[b].exist = 1;
     object[b].x = COIN;
@@ -231,11 +260,11 @@ void CreateSurvive(int line, int distance, Obstacle *obs, Object object[]) {
         obs->distance = distance;
         obs->line = line;
         x = rand();
-        x = x % 3 - 1;
+        x = x % 5 - 2;
         object[b].v = obs->v = x;
         if (obs->x == UP_OB) {
             object[b].height = 2;
-        } else if (obs->x == DOWN_OB) {
+        } else if (obs->x == DOWN_OB||obs->x==DOWN_E_OB) {
             object[b].height = 0;
         } else {
             object[b].height = 2;
@@ -247,8 +276,8 @@ void CreateSurvive(int line, int distance, Obstacle *obs, Object object[]) {
 
 void create(int line, int distance, Obstacle *obs) {
     int x = rand();
-    x = x % 5;
-    if (x == 4)return;
+    x = x % 8;
+    if (x == 7)return;
     else {
         obs->exist = 1;
         obs->x = x;
@@ -298,16 +327,23 @@ void refresh(int t, Obstacle obs[8], Object ob[8], Character *ch) {
         ti_magnet=0;
         ch->have=0;
     }
+    if(ti_e)ti_e++;
+    if(ti_e==20)ti_e=0;
     for (int i = 0; i <= 7; i++) {
         obs[i].distance -= t * ((ch->v) + obs[i].v);
         ob[i].distance -= t * ((ch->v) + ob[i].v);
         if (obs[i].exist && obs[i].line == ch->line && obs[i].distance <= hit_obs) {
-            printf("Over:%d %d %d\n", obs[i].x, obs[i].exist, i);
             //printf("cool\n");
-            if (obs[i].exist && (obs[i].x == UP_OB && (ch->height == 1 || ch->height == 0)) ||
+            if (obs[i].exist &&ch->height!=3&&
+            (   (obs[i].x == UP_OB && ch->height <=1)||
                 (obs[i].x == DOWN_OB && (ch->height == 1 || ch->height == 2)) ||
                 (obs[i].x == ALL_OB && ch->height == 1) ||
-                (obs[i].x == DEATH_OB && (ch->height == 1 || ch->height == 0 || ch->height == 2))) {
+                (obs[i].x == DEATH_OB && (ch->height == 1 || ch->height == 0 || ch->height == 2))||
+                (obs[i].x == UP_E_OB && ((ch->height == 1 || ch->height == 0)||ti_e==0))||
+                (obs[i].x == DOWN_E_OB && (ti_e==0||(ch->height == 1 || ch->height == 2))) ||
+                (obs[i].x == ALL_E_OB && (ti_e==0||ch->height == 1))
+                )){
+                printf("Over:%d %d %d %d %d\n", obs[i].x, obs[i].exist,ti_e,ch->height,i);
                 if (ch->life == 2) {
                     ch->action = RUN;
                     ch->height = 1;
@@ -318,7 +354,7 @@ void refresh(int t, Obstacle obs[8], Object ob[8], Character *ch) {
             obs[i].exist = 0;
         }
         if (obs[i].distance <= hit_obs)obs[i].exist = 0;
-        if (ob[i].exist && (ob[i].line == ch->line||(ch->have&&ob[i].x==COIN) )&& ob[i].distance >= -hit_ob && ob[i].distance <= hit_ob &&
+        if (ob[i].exist && (ob[i].line == ch->line||(ch->have&&ob[i].x==COIN) )&&  ob[i].distance <= hit_ob &&
                 (ob[i].height == ch->height||ch->height==3)) {
             if (ob[i].x == COIN)get_m++;
             if (ob[i].x == FLY) {
@@ -404,6 +440,8 @@ void change(SDL_Event event, Character *m) {
         ti_ob = 1;
         m->life = 2;
         m->action = SKATEBOARD;
+    }else if(event.key.keysym.sym==SDLK_l){
+        ti_e=1;
     }
 }
 
